@@ -87,8 +87,11 @@ def generate_interface_config(router_name, interface_name, ip_address, subnet_ma
     # Add 'no shutdown' for non-loopback interfaces
     if not is_loopback:
         config.append(f"no shutdown")
-    
-    config.append(f"exit")
+        config.append(f"exit")
+        config.append(f"do write")
+    else:
+        config.append(f"exit")
+        config.append(f"do write")
     
     return "\n".join(config)
 
