@@ -21,3 +21,5 @@ This file tracks the project's current status, including recent changes, current
 2025-08-02 01:52:23 - Created a router configuration generator script to automate Cisco IOS commands generation.
 2025-08-02 02:09:05 - Enhanced router configuration script with CIDR notation support and improved interface handling.
 [2025-08-02 16:42:53] - Modified router_config_generator.py to add "exit" and "write" commands after both regular and loopback interface configurations.
+[2025-10-13 05:24:40] - Successfully completed containerlab installation and testing on Apple M4 Mac. Created working directory ~/containerlab-labs, deployed test topology with 2 Alpine Linux containers, verified network connectivity (0% packet loss), and successfully cleaned up the lab. Containerlab is fully functional despite some network link warnings during deployment.
+[2025-10-13 06:15:24] - Created comprehensive OSPF topology guide (ospf_2router_topology_guide.md) with step-by-step instructions for setting up OSPF between 2 routers using containerlab and FRRouting. Guide includes topology file, router configuration, verification commands, and troubleshooting steps.
