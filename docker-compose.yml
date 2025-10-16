@@ -1,0 +1,58 @@
+services:
+  R1:
+    image: frrouting/frr:latest
+    container_name: cisco-lab-R1
+    hostname: R1
+    privileged: true
+    platform: linux/amd64
+    networks:
+      mgmt:
+        ipv4_address: 172.20.20.11
+      router-link:
+        ipv4_address: 192.168.12.1
+    volumes:
+      - ./configs/daemons:/etc/frr/daemons:ro
+    command: >
+      sh -c "
+        ip addr add 10.1.1.1/32 dev lo &&
+        /usr/lib/frr/frrinit.sh start &&
+        tail -f /dev/null
+      "
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+
+  R2:
+    image: frrouting/frr:latest
+    container_name: cisco-lab-R2
+    hostname: R2
+    privileged: true
+    platform: linux/amd64
+    networks:
+      mgmt:
+        ipv4_address: 172.20.20.12
+      router-link:
+        ipv4_address: 192.168.12.2
+    volumes:
+      - ./configs/daemons:/etc/frr/daemons:ro
+    command: >
+      sh -c "
+        ip addr add 10.2.2.2/32 dev lo &&
+        /usr/lib/frr/frrinit.sh start &&
+        tail -f /dev/null
+      "
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+
+networks:
+  mgmt:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.20.0/24
+  router-link:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.12.0/24

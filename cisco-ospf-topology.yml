@@ -1,0 +1,28 @@
+name: cisco-ospf-lab
+
+topology:
+  nodes:
+    R1:
+      kind: linux
+      image: frrouting/frr:latest
+      mgmt-ipv4: 172.20.20.11
+      binds:
+        - ./configs/daemons:/etc/frr/daemons
+      exec:
+        - ip addr add 10.1.1.1/32 dev lo
+
+    R2:
+      kind: linux
+      image: frrouting/frr:latest
+      mgmt-ipv4: 172.20.20.12
+      binds:
+        - ./configs/daemons:/etc/frr/daemons
+      exec:
+        - ip addr add 10.2.2.2/32 dev lo
+
+  links:
+    - endpoints: ["R1:eth1", "R2:eth1"]
+
+mgmt:
+  network: clab-mgmt
+  ipv4-subnet: 172.20.20.0/24
