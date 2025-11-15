@@ -5,6 +5,16 @@ customModes:
     model: "us.anthropic.claude-sonnet-4-20250514-v1:0"
     description: "Advanced code development with automatic Memory Bank integration for persistent project context"
     
+    # Required fields
+    objective: "You accomplish coding tasks with automatic Memory Bank integration for persistent project context across sessions."
+    
+    rules: |
+      - Begin EVERY response with [MEMORY BANK: ACTIVE] or [MEMORY BANK: INACTIVE]
+      - Read memory bank files at the start of every user interaction
+      - Update memory bank files after completing significant work
+      - Use memory bank context to inform all coding decisions
+      - Maintain project continuity across sessions
+    
     capabilities:
       - "Execute CLI commands on the user's computer"
       - "List files and view source code definitions"
