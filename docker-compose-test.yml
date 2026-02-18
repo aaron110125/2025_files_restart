@@ -1,0 +1,39 @@
+services:
+  R1:
+    image: frrouting/frr:latest
+    container_name: cisco-lab-R1
+    hostname: R1
+    privileged: true
+    platform: linux/amd64
+    ports:
+      - "2201:22"
+    networks:
+      mgmt:
+        ipv4_address: 172.20.20.10
+      router-link:
+        ipv4_address: 192.168.12.10
+    volumes:
+      - ./configs/daemons:/etc/frr/daemons:ro
+      - ./configs/ssh-setup.sh:/tmp/ssh-setup.sh:ro
+    command: >
+      sh -c "
+        /tmp/ssh-setup.sh &&
+        /usr/lib/frr/frrinit.sh start &&
+        ip addr add 10.1.1.1/32 dev lo &&
+        tail -f /dev/null
+      "
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+
+networks:
+  mgmt:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.20.0/24
+  router-link:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.12.0/24

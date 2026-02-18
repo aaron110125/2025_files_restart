@@ -1,0 +1,13 @@
+# Containerlab binary files
+*.tar.gz
+*.tar.gz.*
+
+# IDE files
+.vscode/
+
+# Containerlab generated files
+clab-*/
+
+# Temporary files
+*.tmp
+*.log

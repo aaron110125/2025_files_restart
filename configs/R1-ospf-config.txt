@@ -1,0 +1,23 @@
+configure terminal
+
+! Configure the link interface (simulating Fa0/0)
+interface eth1
+  ip address 192.168.12.1/24
+  no shutdown
+  exit
+
+! Configure loopback interface
+interface lo
+  ip address 1.1.1.1/32
+  exit
+
+! Configure OSPF
+router ospf
+  ospf router-id 1.1.1.1
+  network 192.168.12.0/24 area 0
+  network 1.1.1.1/32 area 0
+  exit
+
+! Save configuration
+write memory
+exit

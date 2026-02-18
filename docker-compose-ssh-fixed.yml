@@ -9,9 +9,9 @@ services:
       - "2201:22"  # SSH port mapping
     networks:
       mgmt:
-        ipv4_address: 172.20.20.21  # Changed IP to avoid conflict
+        ipv4_address: 172.20.20.10
       router-link:
-        ipv4_address: 192.168.12.1
+        ipv4_address: 192.168.12.10
     volumes:
       - ./configs/daemons:/etc/frr/daemons:ro
       - ./configs/ssh-setup.sh:/tmp/ssh-setup.sh:ro
@@ -36,9 +36,9 @@ services:
       - "2202:22"  # SSH port mapping
     networks:
       mgmt:
-        ipv4_address: 172.20.20.22  # Changed IP to avoid conflict
+        ipv4_address: 172.20.20.11
       router-link:
-        ipv4_address: 192.168.12.2
+        ipv4_address: 192.168.12.11
     volumes:
       - ./configs/daemons:/etc/frr/daemons:ro
       - ./configs/ssh-setup.sh:/tmp/ssh-setup.sh:ro
