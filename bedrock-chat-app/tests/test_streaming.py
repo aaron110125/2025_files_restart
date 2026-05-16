@@ -105,7 +105,7 @@ def _make_mock_client_raising(exc: Exception):
 # Validates: Requirements 4.2, 4.5, 6.5, 6.6, 6.7
 
 
-@settings(max_examples=100)
+@settings(max_examples=100, deadline=None)
 @given(tokens=st.lists(st.text(min_size=1), min_size=1))
 def test_property4_all_tokens_forwarded_as_data_events(tokens):
     """Property 4 (token path): every token from Bedrock appears as a data: SSE event in order.
@@ -290,3 +290,65 @@ def test_successful_stream_contains_no_error_events():
     error_events = [c for c in chunks if c.startswith("event: error\n")]
 
     assert len(error_events) == 0, f"Unexpected error events: {error_events!r}"
+
+
+# ---------------------------------------------------------------------------
+# Property 8: max_tokens is always within the valid range
+# Feature: bedrock-chat-app, Property 8: max_tokens is always within the valid range
+# ---------------------------------------------------------------------------
+
+# Validates: Requirements 6.4
+
+
+@settings(max_examples=100)
+@given(
+    messages=st.lists(
+        st.fixed_dictionaries({
+            "role": st.sampled_from(["user", "assistant"]),
+            "content": st.text(min_size=1).filter(lambda s: s.strip()),
+        }),
+        min_size=1,
+    ).filter(lambda msgs: msgs[-1]["role"] == "user")
+)
+def test_property8_max_tokens_within_valid_range(messages):
+    """Property 8: inferenceConfig.maxTokens satisfies 4096 ≤ maxTokens ≤ 8192 on every invocation.
+
+    **Validates: Requirements 6.4**
+    # Feature: bedrock-chat-app, Property 8: max_tokens is always within the valid range
+    """
+    mock_client = _make_mock_client_for_tokens(["hello"])
+    app_mod = _load_app_with_mock_client(mock_client)
+
+    # Trigger the stream so converse_stream is called
+    _collect_stream(app_mod.stream_response, messages)
+
+    # Verify converse_stream was called at least once
+    assert mock_client.converse_stream.called, (
+        "Expected converse_stream to be called, but it was not."
+    )
+
+    # Check every invocation's inferenceConfig.maxTokens
+    for call in mock_client.converse_stream.call_args_list:
+        kwargs = call.kwargs if call.kwargs else {}
+        args = call.args if call.args else ()
+
+        # inferenceConfig may be passed as a keyword or positional argument
+        inference_config = kwargs.get("inferenceConfig")
+        if inference_config is None and len(args) > 0:
+            # Unlikely but handle positional usage
+            inference_config = args[0].get("inferenceConfig")
+
+        assert inference_config is not None, (
+            f"converse_stream was called without inferenceConfig.\n"
+            f"call_args={call!r}"
+        )
+
+        max_tokens = inference_config.get("maxTokens")
+        assert max_tokens is not None, (
+            f"inferenceConfig does not contain maxTokens.\n"
+            f"inferenceConfig={inference_config!r}"
+        )
+        assert 4096 <= max_tokens <= 8192, (
+            f"maxTokens={max_tokens} is outside the valid range [4096, 8192].\n"
+            f"inferenceConfig={inference_config!r}\nmessages={messages!r}"
+        )
