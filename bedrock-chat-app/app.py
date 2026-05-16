@@ -45,10 +45,14 @@ load_dotenv()
 # Startup validation
 # ---------------------------------------------------------------------------
 
-# Requirement 2.1 / 2.5 — AWS_BEARER_TOKEN_BEDROCK is mandatory
+# Support both IAM credentials (access key/secret key) and ABSK bearer tokens.
+# IAM credentials take priority if both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set.
+aws_access_key = os.environ.get("AWS_ACCESS_KEY_ID", "").strip()
+aws_secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY", "").strip()
 aws_bearer_token = os.environ.get("AWS_BEARER_TOKEN_BEDROCK", "").strip()
-if not aws_bearer_token:
-    logger.error("ERROR: AWS_BEARER_TOKEN_BEDROCK is not set or empty")
+
+if not aws_access_key and not aws_bearer_token:
+    logger.error("ERROR: Either AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY or AWS_BEARER_TOKEN_BEDROCK must be set")
     sys.exit(1)
 
 # Requirement 2.2 — AWS_REGION with default
@@ -81,38 +85,43 @@ else:
 # BedrockClient — module-level singleton (Requirement 6.1, 6.2)
 # ---------------------------------------------------------------------------
 
-# Requirement 6.1 — ensure the bearer token is set in os.environ so that
-# boto3's bearer token credential provider picks it up automatically.
-os.environ["AWS_BEARER_TOKEN_BEDROCK"] = aws_bearer_token
+from botocore.config import Config as BotoConfig  # noqa: E402
 
-# Construct the client once at startup; reused for every request.
-# Use bearer token auth via botocore's TokenProvider for ABSK keys.
-from botocore.config import Config as BotoConfig
-from botocore.tokens import SSOTokenProvider  # noqa: F401
+if aws_access_key and aws_secret_key:
+    # Use standard IAM credentials (access key + secret key)
+    logger.info("Using IAM credentials for Bedrock authentication")
+    aws_session_token = os.environ.get("AWS_SESSION_TOKEN", "").strip() or None
+    _session = boto3.Session(
+        aws_access_key_id=aws_access_key,
+        aws_secret_access_key=aws_secret_key,
+        aws_session_token=aws_session_token,
+        region_name=aws_region,
+    )
+    bedrock_client = _session.client("bedrock-runtime")
+else:
+    # Fallback: Use ABSK bearer token authentication
+    logger.info("Using ABSK bearer token for Bedrock authentication")
+    os.environ["AWS_BEARER_TOKEN_BEDROCK"] = aws_bearer_token
 
-_session = boto3.Session(region_name=aws_region)
-bedrock_client = _session.client(
-    "bedrock-runtime",
-    endpoint_url=f"https://bedrock-runtime.{aws_region}.amazonaws.com",
-    config=BotoConfig(
-        signature_version="bearer",
-        request_min_compression_size_bytes=1024,
-    ),
-)
+    _session = boto3.Session(region_name=aws_region)
+    bedrock_client = _session.client(
+        "bedrock-runtime",
+        endpoint_url=f"https://bedrock-runtime.{aws_region}.amazonaws.com",
+        config=BotoConfig(
+            signature_version="bearer",
+            request_min_compression_size_bytes=1024,
+        ),
+    )
 
-# Inject the bearer token into the client's token for ABSK authentication
-import botocore.auth  # noqa: E402
+    # Inject the bearer token into the Authorization header
+    import botocore.auth  # noqa: E402
 
-_original_add_auth = botocore.auth.BearerAuth.add_auth
+    def _patched_add_auth(self, request, **kwargs):
+        """Inject the ABSK bearer token into the Authorization header."""
+        request.headers["Authorization"] = f"Bearer {aws_bearer_token}"
+        return
 
-
-def _patched_add_auth(self, request, **kwargs):
-    """Inject the ABSK bearer token into the Authorization header."""
-    request.headers["Authorization"] = f"Bearer {aws_bearer_token}"
-    return
-
-
-botocore.auth.BearerAuth.add_auth = _patched_add_auth
+    botocore.auth.BearerAuth.add_auth = _patched_add_auth
 
 
 async def stream_response(messages: List[Dict]) -> AsyncGenerator[str, None]:

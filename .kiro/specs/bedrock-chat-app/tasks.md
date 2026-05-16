@@ -27,7 +27,7 @@ Implement a single-file Python FastAPI web application that streams Claude 3.5 S
     - Test default values applied for `AWS_REGION` and `BEDROCK_MODEL_ID`
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 7.2_
 
-- [ ] 3. Implement the boto3 Bedrock client and streaming generator
+- [x] 3. Implement the boto3 Bedrock client and streaming generator
   - [x] 3.1 Implement `BedrockClient` module-level singleton and `stream_response` in `app.py`
     - Set `os.environ["AWS_BEARER_TOKEN_BEDROCK"]` before constructing the boto3 client
     - Construct `boto3.client("bedrock-runtime", region_name=aws_region)` once at startup
@@ -35,7 +35,7 @@ Implement a single-file Python FastAPI web application that streams Claude 3.5 S
     - Yield `contentBlockDelta` text chunks; handle `ThrottlingException`, `UnauthorizedException`, `AccessDeniedException`, and generic `ClientError` by yielding the appropriate SSE error event strings
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-  - [-] 3.2 Write property test for SSE stream token forwarding (Property 4)
+  - [x] 3.2 Write property test for SSE stream token forwarding (Property 4)
     - **Property 4: SSE stream faithfully forwards all Bedrock tokens and errors**
     - **Validates: Requirements 4.2, 4.5, 6.5, 6.6, 6.7**
     - Use `st.lists(st.text(min_size=1), min_size=1)` to generate token sequences; assert each token appears as a `data:` event in order
@@ -43,7 +43,7 @@ Implement a single-file Python FastAPI web application that streams Claude 3.5 S
     - Tag: `# Feature: bedrock-chat-app, Property 4: SSE stream faithfully forwards all Bedrock tokens and errors`
     - _File: `tests/test_streaming.py`_
 
-  - [-] 3.3 Write property test for max_tokens range (Property 8)
+  - [x] 3.3 Write property test for max_tokens range (Property 8)
     - **Property 8: max_tokens is always within the valid range**
     - **Validates: Requirements 6.4**
     - Assert `inferenceConfig.maxTokens` satisfies `4096 ≤ maxTokens ≤ 8192` on every mock invocation
@@ -59,14 +59,14 @@ Implement a single-file Python FastAPI web application that streams Claude 3.5 S
     - On unexpected exception: log full stack trace at ERROR, return HTTP 500 `{"detail": "Internal server error"}`
     - _Requirements: 4.1, 4.2, 4.4, 4.5, 5.2, 5.5, 8.5, 8.6, 8.7_
 
-  - [~] 4.2 Write unit tests for the `/chat` route in `tests/test_routes.py`
+  - [-] 4.2 Write unit tests for the `/chat` route in `tests/test_routes.py`
     - Test HTTP 422 for empty messages list
     - Test HTTP 422 when last message role is not `user`
     - Test SSE stream ends with `event: done` after successful mock response
     - Test `event: error` is sent for `ThrottlingException`, `UnauthorizedException`, and generic `ClientError`
     - _Requirements: 4.2, 4.4, 4.5, 6.5, 6.6, 6.7_
 
-  - [~] 4.3 Write property test for conversation history pruning (Property 6)
+  - [ ] 4.3 Write property test for conversation history pruning (Property 6)
     - **Property 6: Conversation history pruning preserves recency and enforces the 100-turn cap**
     - **Validates: Requirements 5.5**
     - Use `st.integers(min_value=101, max_value=500)` for history length; assert pruned history has ≤ 100 turns and contains the most recent turns in original order
